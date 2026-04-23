@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from telegram import Update
+from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -274,6 +275,13 @@ async def handle_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.info("[BOT→] %s", text)
 
 
+async def handle_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if isinstance(context.error, (NetworkError, TimedOut)):
+        logger.warning("Telegram network error (will retry): %s", context.error)
+    else:
+        logger.exception("Unhandled error:", exc_info=context.error)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -286,6 +294,7 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, handle_audio))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_trigger))
     app.add_handler(MessageHandler(filters.ALL, handle_fallback))
+    app.add_error_handler(handle_error)
 
     collected, total = count_phrases()
     next_p = get_next_phrase()
