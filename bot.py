@@ -87,8 +87,12 @@ def load_status() -> list[dict]:
         return []
     try:
         data = json.loads(config.STATUS_FILE.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            logger.error("status.json is malformed (not a list) — treating as empty. Fix %s manually.", config.STATUS_FILE)
+            return []
+        return data
     except (json.JSONDecodeError, OSError):
+        logger.error("status.json could not be read — treating as empty. Fix %s manually.", config.STATUS_FILE)
         return []
 
 
@@ -284,7 +288,12 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.ALL, handle_fallback))
 
     collected, total = count_phrases()
+    next_p = get_next_phrase()
     logger.info("Bot starting. %d/%d phrases collected. Log: %s", collected, total, _LOG_FILE)
+    if next_p:
+        logger.info("Next phrase to collect: %r", next_p)
+    else:
+        logger.info("All %d phrases already collected.", total)
     app.run_polling(drop_pending_updates=True)
 
 

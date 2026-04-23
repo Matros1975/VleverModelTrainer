@@ -1,5 +1,10 @@
 from pathlib import Path
 
+from dotenv import load_dotenv
+import os
+
+load_dotenv(Path(__file__).parent / ".env")
+
 PROJECT_DIR = Path(__file__).parent
 DATA_DIR = PROJECT_DIR / "Data"
 PHRASES_FILE = DATA_DIR / "train_phrases.txt"
@@ -11,8 +16,8 @@ PROCESSED_DIR = DATA_DIR / "Processed"
 PROCESSED_AUDIO_DIR = PROCESSED_DIR / "Audio"
 PROCESSED_STATUS_FILE = PROCESSED_DIR / "status.json"
 
-ALLOWED_CHAT_ID = 191406357
-BOT_TOKEN = "8617877435:AAE-a-p_QK8r_qT5qp5sbzMSChwo-kjdBLU"
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+ALLOWED_CHAT_ID = int(os.environ["ALLOWED_CHAT_ID"])
 
 
 def get_bot_token() -> str:
