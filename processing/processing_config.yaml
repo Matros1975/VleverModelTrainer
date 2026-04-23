@@ -1,0 +1,72 @@
+# Audio processing pipeline configuration.
+#
+# Plugins run in the order listed. Set `enabled: false` to bypass a plugin
+# without removing it. The config is re-read on every run — changes take effect
+# immediately without restarting the bot.
+#
+# System requirement: ffmpeg must be installed for loading OGG/Opus files.
+
+pipeline:
+
+  # ── 1. Convert to mono ────────────────────────────────────────────────────
+  # TTS models require single-channel audio. Averages all input channels.
+  - plugin: to_mono
+    enabled: true
+    params: {}
+
+  # ── 2. Trim leading / trailing silence ───────────────────────────────────
+  # Uses Silero VAD (ML-based) — far more accurate than energy-threshold trimming.
+  # Model (~2 MB) is downloaded and cached on first use.
+  - plugin: trim_silence
+    enabled: true
+    params:
+      threshold: 0.5               # VAD confidence threshold (0.0–1.0)
+      min_silence_duration_ms: 100 # minimum silence gap to treat as a break
+
+  # ── 3. Noise reduction ────────────────────────────────────────────────────
+  # DeepFilterNet neural noise suppressor. Works well on CPU.
+  # Model (~50 MB) is downloaded and cached on first use.
+  # Output is always at 48 000 Hz; the resample plugin (step 6) converts to
+  # the final target sample rate.
+  - plugin: noise_reduction
+    enabled: true
+    params:
+      atten_lim_db: 15             # maximum noise attenuation in dB (higher = more aggressive)
+
+  # ── 4. High-pass filter ───────────────────────────────────────────────────
+  # Removes low-frequency rumble caused by mic vibration and handling noise.
+  # Applied at the current (48 kHz) rate for maximum precision.
+  - plugin: highpass_filter
+    enabled: true
+    params:
+      cutoff_hz: 80                # attenuate everything below this frequency
+
+  # ── 5. Loudness normalisation ─────────────────────────────────────────────
+  # ITU-R BS.1770-4 integrated loudness normalisation.
+  # -23.0 LUFS = EBU R128 broadcast standard (conservative, safe for training).
+  # Use -16.0 LUFS for louder, more typical speech data.
+  - plugin: normalize
+    enabled: true
+    params:
+      target_lufs: -23.0
+
+  # ── 6. Resample to target sample rate ────────────────────────────────────
+  # Must be the last step so it captures any SR changes made by upstream plugins
+  # (DeepFilterNet outputs at 48 kHz; voice_enhance may output at 44.1 kHz).
+  - plugin: resample
+    enabled: true
+    params:
+      target_sr: 22050             # Hz — adjust to match your TTS model's expectation
+      res_type: kaiser_best        # highest quality resampling algorithm
+
+  # ── 7. AI voice enhancement (optional) ───────────────────────────────────
+  # Resemble Enhance: denoiser + bandwidth restorer trained on 44.1 kHz speech.
+  # Model ~600 MB. Slow on CPU (10–30 s/clip). Enable only when GPU is available.
+  # If enabled, place BEFORE the resample plugin so resample handles the output SR.
+  - plugin: voice_enhance
+    enabled: false
+    params:
+      nfe: 64                      # number of function evaluations (quality vs speed)
+      solver: midpoint             # ODE solver — midpoint is a good default
+      lambd: 0.9                   # denoising strength (0 = enhance only, 1 = denoise only)
+      tau: 0.5                     # solver tolerance

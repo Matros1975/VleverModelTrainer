@@ -1,0 +1,8 @@
+# Training phrases — one per line; lines starting with # are comments
+# Replace these examples with your actual training phrases before starting.
+
+The weather is nice today.
+Please open the front door.
+Turn off the lights in the kitchen.
+What time is it?
+Set a timer for five minutes.

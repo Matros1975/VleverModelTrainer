@@ -1,0 +1,12 @@
+python-telegram-bot>=20.0
+
+# Audio processing pipeline
+torch>=2.0
+librosa>=0.10
+resampy>=0.4
+soundfile>=0.12
+deepfilternet>=0.5
+silero-vad>=5.0
+pedalboard>=0.9
+pyloudnorm>=0.1
+pyyaml>=6.0

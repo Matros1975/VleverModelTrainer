@@ -1,0 +1,14 @@
+# Optional: AI voice enhancement via Resemble Enhance.
+#
+# Requires a GPU and a specific torch version (2.1.1).
+# Install ONLY if you intend to enable the voice_enhance plugin in
+# processing/processing_config.yaml.
+#
+# Install into the project venv:
+#   .venv/bin/pip install torch==2.1.1 --index-url https://download.pytorch.org/whl/cu118
+#   .venv/bin/pip install -r requirements-enhance.txt
+#
+# Note: installing this will downgrade torch from the version used by the
+# rest of the pipeline. Test thoroughly if mixing with deepfilternet.
+
+resemble-enhance>=0.0.1
